@@ -52,7 +52,7 @@ describe("POST /api/contact", () => {
     const { NextRequest } = await import("next/server");
     const req = new NextRequest("http://localhost:3000/api/contact", {
       method: "POST",
-      headers: { "content-type": "application/json", origin: "http://localhost:3000", "x-forwarded-for": `1.2.3.${Math.random()}`, ...headers },
+      headers: { "content-type": "application/json", host: "localhost:3000", origin: "http://localhost:3000", "x-forwarded-for": `1.2.3.${Math.random()}`, ...headers },
       body: typeof body === "string" ? body : JSON.stringify(body),
     });
     return POST(req);
@@ -61,6 +61,13 @@ describe("POST /api/contact", () => {
   it("rejects foreign origins", async () => {
     const res = await post(valid, { origin: "https://evil.example" });
     expect(res.status).toBe(403);
+  });
+
+  it("accepts same-origin requests even when not in the allow-list", async () => {
+    delete process.env.RESEND_API_KEY;
+    process.env.CONTACT_ALLOWED_ORIGINS = "https://www.aanuragmishra.com";
+    const res = await post(valid);
+    expect(res.status).toBe(503); // passed the origin check, stopped at email config
   });
 
   it("returns field errors for invalid input", async () => {

@@ -24,19 +24,23 @@ function allowedOrigins(): string[] {
     .filter(Boolean);
 }
 
-/** CSRF defence: browsers always send Origin on cross-site POSTs. */
+/**
+ * CSRF defence: browsers always send Origin on cross-site POSTs.
+ * Same-origin requests are always accepted (so preview / *.vercel.app deployments
+ * work out of the box); CONTACT_ALLOWED_ORIGINS adds any extra trusted origins.
+ */
 function originAllowed(req: NextRequest): boolean {
   const origin = req.headers.get("origin");
   if (!origin) return false;
-  const allowed = allowedOrigins();
-  if (allowed.length > 0) return allowed.includes(origin.replace(/\/$/, ""));
-  // No allow-list configured: require same-origin.
-  const host = req.headers.get("x-forwarded-host") ?? req.headers.get("host");
+  let originHost: string;
   try {
-    return new URL(origin).host === host;
+    originHost = new URL(origin).host;
   } catch {
     return false;
   }
+  const host = req.headers.get("x-forwarded-host") ?? req.headers.get("host");
+  if (host && originHost === host) return true;
+  return allowedOrigins().includes(origin.replace(/\/$/, ""));
 }
 
 export async function POST(req: NextRequest) {
