@@ -1,0 +1,202 @@
+@import "tailwindcss";
+@import "lenis/dist/lenis.css";
+
+/*
+ * Design tokens — derived from the original Squarespace theme
+ * (charcoal #272727 / #1d1d1d, white type, signal red #ff0004, Chivo + Abel).
+ */
+@theme {
+  --color-void: #0b0b0d;
+  --color-ink: #121214;
+  --color-charcoal: #1d1d1d;
+  --color-graphite: #272727;
+  --color-line: rgb(255 255 255 / 0.1);
+  --color-paper: #f2f2ef;
+  --color-mute: #9a9a9a;
+  --color-signal: #ff0004;
+  --color-ember: #ff5a4f;
+
+  --font-display: var(--font-chivo), ui-sans-serif, system-ui, sans-serif;
+  --font-body: var(--font-abel), ui-sans-serif, system-ui, sans-serif;
+
+  --ease-cinema: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-inout: cubic-bezier(0.76, 0, 0.24, 1);
+
+  --text-mega: clamp(3rem, 8.6vw, 10.5rem);
+}
+
+@layer base {
+  html {
+    background: var(--color-void);
+    color: var(--color-paper);
+    color-scheme: dark;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    min-height: 100dvh;
+    font-family: var(--font-body);
+    font-size: 1.0625rem;
+    line-height: 1.65;
+    overflow-x: clip;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display);
+    letter-spacing: -0.02em;
+    line-height: 1.02;
+  }
+
+  ::selection {
+    background: var(--color-signal);
+    color: #fff;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-signal);
+    outline-offset: 3px;
+    border-radius: 2px;
+  }
+
+  [tabindex="-1"]:focus {
+    outline: none;
+  }
+
+  html.scroll-locked,
+  html.scroll-locked body {
+    overflow: hidden;
+  }
+}
+
+@layer components {
+  /* Frosted panel that keeps copy legible over the 3D world. */
+  .glass {
+    background: linear-gradient(160deg, rgb(24 24 27 / 0.72), rgb(12 12 14 / 0.58));
+    border: 1px solid var(--color-line);
+    backdrop-filter: blur(14px) saturate(120%);
+    -webkit-backdrop-filter: blur(14px) saturate(120%);
+    box-shadow:
+      0 30px 80px -30px rgb(0 0 0 / 0.8),
+      inset 0 1px 0 rgb(255 255 255 / 0.05);
+  }
+
+  .eyebrow {
+    font-family: var(--font-body);
+    font-size: 0.8rem;
+    letter-spacing: 0.32em;
+    text-transform: uppercase;
+    color: var(--color-mute);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.9rem;
+  }
+
+  .eyebrow::before {
+    content: "";
+    width: 2.25rem;
+    height: 1px;
+    background: var(--color-signal);
+  }
+
+  .link-underline {
+    background-image: linear-gradient(currentColor, currentColor);
+    background-size: 0% 1px;
+    background-position: 0 100%;
+    background-repeat: no-repeat;
+    transition: background-size 0.5s var(--ease-cinema);
+  }
+
+  .link-underline:hover,
+  .link-underline:focus-visible {
+    background-size: 100% 1px;
+  }
+
+  .skip-link {
+    position: fixed;
+    left: 1rem;
+    top: 1rem;
+    z-index: 100;
+    transform: translateY(-200%);
+    padding: 0.75rem 1.25rem;
+    background: var(--color-signal);
+    color: #fff;
+    font-weight: 700;
+    transition: transform 0.2s;
+  }
+
+  .skip-link:focus {
+    transform: translateY(0);
+  }
+}
+
+/*
+ * Reveal animations — content is visible by default (no-JS, reduced motion, SEO).
+ * Only when the motion system boots (html.motion-ok) are elements hidden and then
+ * revealed by GSAP ScrollTrigger.
+ */
+html.motion-ok [data-reveal] {
+  opacity: 0;
+  transform: translateY(36px) scale(0.985);
+  filter: blur(6px);
+  will-change: transform, opacity, filter;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  html.motion-ok [data-reveal] {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+}
+
+/*
+ * Sprite-sheet walk cycle for the 2D (mobile) fallback.
+ * Sheet: 12 columns × 8 rows. With background-size 1200%/800%, column c sits at
+ * c/11 × 100% and row r at r/7 × 100%. Rows 0–4 (60 frames) form the loop.
+ */
+@keyframes sprite-walk-x {
+  from {
+    background-position-x: 0%;
+  }
+  to {
+    background-position-x: 109.0909%;
+  }
+}
+
+@keyframes sprite-walk-y {
+  from {
+    background-position-y: 0%;
+  }
+  to {
+    background-position-y: 71.4286%;
+  }
+}
+
+.sprite-walker {
+  background-image: url("/assets/character/walk-sprite.webp");
+  background-repeat: no-repeat;
+  background-size: 1200% 800%;
+  aspect-ratio: 200 / 360;
+  animation:
+    sprite-walk-x 1s steps(12) infinite,
+    sprite-walk-y 5s steps(5) infinite;
+  mask-image: linear-gradient(to bottom, #000 82%, transparent 100%);
+}
+
+.sprite-walker[data-paused="true"] {
+  animation-play-state: paused;
+}

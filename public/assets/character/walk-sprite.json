@@ -1,0 +1,14 @@
+{
+  "image": "/assets/character/walk-sprite.webp",
+  "frameWidth": 200,
+  "frameHeight": 360,
+  "cols": 12,
+  "rows": 8,
+  "frameCount": 96,
+  "fps": 12,
+  "walkLoop": [
+    0,
+    64
+  ],
+  "idleFrame": 95
+}

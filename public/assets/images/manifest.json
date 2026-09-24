@@ -1,0 +1,170 @@
+{
+  "thumbs": {
+    "cadbury": {
+      "width": 960,
+      "height": 540
+    },
+    "croma": {
+      "width": 960,
+      "height": 540
+    },
+    "shutterstock-a-selling-hashtag": {
+      "width": 960,
+      "height": 540
+    },
+    "zomato": {
+      "width": 960,
+      "height": 540
+    },
+    "hyundai-brilliant-moments": {
+      "width": 360,
+      "height": 202
+    },
+    "mercedes-benz": {
+      "width": 960,
+      "height": 647
+    },
+    "paytm-pollution-tax": {
+      "width": 960,
+      "height": 679
+    },
+    "kia-motors-two-little-feet": {
+      "width": 960,
+      "height": 540
+    },
+    "asos-wardrobe": {
+      "width": 360,
+      "height": 202
+    },
+    "listerine-ask-yourself-why": {
+      "width": 960,
+      "height": 1358
+    },
+    "hyundai-introducing-the-clutch": {
+      "width": 850,
+      "height": 1100
+    },
+    "facebook-friend-request-fentanyl": {
+      "width": 360,
+      "height": 202
+    },
+    "nike-victory-smile": {
+      "width": 960,
+      "height": 640
+    }
+  },
+  "galleries": {
+    "cadbury": [
+      {
+        "width": 277,
+        "height": 531
+      },
+      {
+        "width": 300,
+        "height": 528
+      },
+      {
+        "width": 278,
+        "height": 529
+      },
+      {
+        "width": 305,
+        "height": 524
+      }
+    ],
+    "zomato": [
+      {
+        "width": 1600,
+        "height": 11532
+      },
+      {
+        "width": 639,
+        "height": 638
+      },
+      {
+        "width": 515,
+        "height": 641
+      },
+      {
+        "width": 646,
+        "height": 643
+      },
+      {
+        "width": 638,
+        "height": 638
+      }
+    ],
+    "hyundai-brilliant-moments": [
+      {
+        "width": 1189,
+        "height": 1600
+      }
+    ],
+    "mercedes-benz": [
+      {
+        "width": 1600,
+        "height": 1078
+      },
+      {
+        "width": 1600,
+        "height": 1078
+      },
+      {
+        "width": 1600,
+        "height": 1078
+      }
+    ],
+    "paytm-pollution-tax": [
+      {
+        "width": 1600,
+        "height": 1132
+      }
+    ],
+    "listerine-ask-yourself-why": [
+      {
+        "width": 1600,
+        "height": 2263
+      },
+      {
+        "width": 1600,
+        "height": 2263
+      },
+      {
+        "width": 1600,
+        "height": 2263
+      }
+    ],
+    "hyundai-introducing-the-clutch": [
+      {
+        "width": 1600,
+        "height": 2071
+      },
+      {
+        "width": 1600,
+        "height": 2071
+      },
+      {
+        "width": 1600,
+        "height": 2071
+      }
+    ],
+    "nike-victory-smile": [
+      {
+        "width": 960,
+        "height": 640
+      },
+      {
+        "width": 960,
+        "height": 640
+      },
+      {
+        "width": 960,
+        "height": 640
+      }
+    ]
+  },
+  "portrait": {
+    "width": 312,
+    "height": 310
+  }
+}
