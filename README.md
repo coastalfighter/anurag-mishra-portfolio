@@ -74,11 +74,17 @@ Everything is configured in **`src/lib/characterConfig.ts`** (look for `⬇️ S
 | `gltf` | You have a rigged **`.glb`** with a walk clip | Drop it at `public/assets/models/character.glb` and set `mode: "gltf"`, `walkClip`, `scale`, `yawOffset`. Draco, Meshopt and **KTX2** textures are decoded locally. Add `lods: [{ url, distance }]` for Level of Detail. Tune `secondsPerUnit` to stop foot sliding. |
 | `placeholder` | No asset yet | A procedural capsule mannequin that swings its limbs as it walks. |
 
+**For a complete character (feet included)** the source video must be *full-body*: head to shoes in frame for the whole clip, ideally with a little floor below the feet. The current meadow clip crops the feet in every frame, so the pipeline flags it (`"croppedFeet": true` in `walk-sprite.json`) and the bottom edge is faded into the ground. With a full-body video that flag flips automatically and the character stands on the ground uncropped. A **4K** source gives the sharpest result: HD frames are kept at native resolution up to 1024 px tall (`--hd-max-height`) and packed into ≤4096 px sheets (`walk-hd-N.webp`, desktop), and a low-res sheet serves tablets and phones.
+
 The walk animation is **driven by distance walked**, not time: the stride advances only while you scroll and freezes when you stop. Any load failure falls back to the mannequin through an error boundary. The asset built from your uploaded meadow video is already in place. The meadow footage itself plays in the hero on phones.
 
 **Compressed textures:** `useWorldTexture()` (`src/lib/textures.ts`) accepts `.ktx2` URLs transparently. Convert with e.g. `toktx --t2 --encode etc1s --genmipmap out.ktx2 in.png` and point the data at the new file.
 
 ---
+
+## Colours
+
+Every 3D colour lives in **`src/lib/palette.ts`** ("Vivid Dusk": indigo → violet → hot-pink → tangerine sky, plum ground with a cyan/magenta grid, candy accents). Change the hex values there to re-theme the whole world.
 
 ## Rendering tiers, performance and accessibility
 
@@ -91,7 +97,7 @@ The walk animation is **driven by distance walked**, not time: the stride advanc
 | **fallback** | Phones, no WebGL2, Save-Data | No Three.js. The walking film plays full-bleed in the hero, and a CSS sprite-sheet guide parallaxes alongside each section |
 | **static** | `prefers-reduced-motion` | No WebGL, no smooth scroll, no reveal animations; hero shows a still |
 
-* **Performance:** the Scene is code-split (`next/dynamic`, `ssr:false`). Only the guide and hero block the loader, and other environments mount and fetch textures when the guide approaches (`WaypointGroup mountRange`). Distant groups are hidden. `PerformanceMonitor` steps the DPR down and drops post-processing if FPS declines. Particles and light columns use instanced or points geometry, and per-frame code is allocation-free. The glyph LODs use Drei `<Detailed>`.
+* **Performance:** the Scene is code-split (`next/dynamic`, `ssr:false`). Every environment mounts up-front, so `<Preload all/>` compiles all shaders and uploads all textures during the loading screen, which avoids mid-scroll hitches. Distant groups are hidden per frame. Panels are solid-tinted (no `backdrop-filter`, which re-blurs the live canvas every frame). Rendering starts at DPR ≤ 1.25 with SMAA instead of MSAA, and only the global lights remain. `PerformanceMonitor` steps the DPR down and drops post-processing if FPS declines. Particles and light columns use instanced or points geometry, and per-frame code is allocation-free. The glyph LODs use Drei `<Detailed>`.
 * **Accessibility:** the canvas is `aria-hidden`, and all information is semantic HTML (one `h1`, section `h2`s, `h3`s). There is a skip link, visible focus rings, a focus-trapped mobile menu with Escape to close, and `aria-current` on nav. Form errors are linked and announced. Content stays visible without JS.
 * **Security:** strict CSP and security headers (`next.config.ts`). The contact API has origin checks (CSRF), zod validation, a body-size cap, rate limiting, a honeypot, and plain-text email only (no HTML injection surface).
 

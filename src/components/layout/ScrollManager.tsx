@@ -75,9 +75,9 @@ export function ScrollManager({ animate }: Props) {
     const ro = new ResizeObserver(() => measure());
     ro.observe(document.body);
     window.addEventListener("resize", measure);
-    // Lenis emits on its own ticker; native scroll covers reduced-motion / no-Lenis mode.
+    // Lenis emits on its own ticker; native scroll only when Lenis is off (reduced motion).
     const offLenis = lenis?.on("scroll", update);
-    window.addEventListener("scroll", onScroll, { passive: true });
+    if (!lenis) window.addEventListener("scroll", onScroll, { passive: true });
     // Fonts & images change layout after first paint.
     void document.fonts?.ready.then(measure);
     window.addEventListener("load", measure);
@@ -111,7 +111,6 @@ export function ScrollManager({ animate }: Props) {
             opacity: 1,
             y: 0,
             scale: 1,
-            filter: "blur(0px)",
             duration: 1.1,
             ease: "expo.out",
             stagger: 0.08,

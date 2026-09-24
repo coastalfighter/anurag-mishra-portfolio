@@ -3,7 +3,8 @@
 import { PerformanceMonitor, Preload } from "@react-three/drei";
 import { Canvas } from "@react-three/fiber";
 import { Suspense, useState } from "react";
-import { ACESFilmicToneMapping } from "three";
+import { NeutralToneMapping } from "three";
+import { WORLD } from "@/lib/palette";
 import { loadStore } from "@/store/loadStore";
 import { CameraController } from "./CameraController";
 import { CharacterPath } from "./CharacterPath";
@@ -34,7 +35,11 @@ export interface SceneProps {
  */
 export default function Scene({ tier, parallax }: SceneProps) {
   const full = tier === "full";
-  const [dpr, setDpr] = useState<number>(full ? 1.5 : 1);
+  // Start conservatively; PerformanceMonitor raises resolution only if there is headroom.
+  const maxDpr = full ? 1.5 : 1;
+  const [dpr, setDpr] = useState<number>(() =>
+    Math.min(typeof window !== "undefined" ? window.devicePixelRatio : 1, full ? 1.25 : 1),
+  );
   const [effects, setEffects] = useState(full);
 
   return (
@@ -43,15 +48,17 @@ export default function Scene({ tier, parallax }: SceneProps) {
         dpr={dpr}
         flat={false}
         gl={{
+          // MSAA on the default framebuffer when no post-processing; SMAA handles AA otherwise.
           antialias: !full,
           alpha: false,
           stencil: false,
           depth: true,
           powerPreference: "high-performance",
-          toneMapping: ACESFilmicToneMapping,
-          toneMappingExposure: 1.05,
+          // Neutral tone mapping keeps the palette saturated (ACES washes vivid hues out).
+          toneMapping: NeutralToneMapping,
+          toneMappingExposure: 1,
         }}
-        camera={{ fov: 40, near: 0.1, far: 400, position: [0, 1.3, 10] }}
+        camera={{ fov: 40, near: 0.1, far: 1200, position: [0, 1.3, 10] }}
         events={undefined}
         style={{ pointerEvents: "none" }}
         onCreated={({ gl }) => {
@@ -61,14 +68,14 @@ export default function Scene({ tier, parallax }: SceneProps) {
         }}
       >
         <color attach="background" args={[FOG_COLOR]} />
-        <fogExp2 attach="fog" args={[FOG_COLOR, 0.028]} />
+        <fogExp2 attach="fog" args={[FOG_COLOR, WORLD.fogDensity]} />
 
         {/* Adaptive quality: step resolution down on slow GPUs, drop post-processing if still struggling. */}
         <PerformanceMonitor
           bounds={() => [45, 58]}
           flipflops={3}
           onDecline={() => setDpr((d) => Math.max(0.75, +(d - 0.25).toFixed(2)))}
-          onIncline={() => setDpr((d) => Math.min(full ? 1.75 : 1.25, +(d + 0.25).toFixed(2)))}
+          onIncline={() => setDpr((d) => Math.min(maxDpr, +(d + 0.25).toFixed(2)))}
           onFallback={() => {
             setDpr(1);
             setEffects(false);
@@ -77,17 +84,17 @@ export default function Scene({ tier, parallax }: SceneProps) {
 
         <CameraController centred={!full} parallax={parallax} />
         <Lighting />
-        <World />
+        <World shapes={full ? 34 : 18} />
 
-        {/* Critical path: the guide + hero. Tracked by the loading screen. */}
+        {/*
+          Everything mounts up-front inside one Suspense so <Preload/> compiles every
+          shader and uploads every texture during the loading screen — no hitches when
+          a new scene scrolls into view. Distant groups are hidden per-frame (culling),
+          and only the 13 campaign screenshots stream in lazily.
+        */}
         <Suspense fallback={null}>
-          <CharacterPath />
+          <CharacterPath hd={full} />
           <HeroEnvironment />
-          <Preload all />
-        </Suspense>
-
-        {/* Everything else streams in lazily as the guide approaches. */}
-        <Suspense fallback={null}>
           <AboutEnvironment />
           <SkillsEnvironment />
           <PortfolioEnvironment />
@@ -95,9 +102,10 @@ export default function Scene({ tier, parallax }: SceneProps) {
           <TestimonialsEnvironment />
           <ContactEnvironment />
           <Transitions />
+          <Preload all />
         </Suspense>
 
-        <Particles count={full ? 2200 : 900} />
+        <Particles count={full ? 1600 : 700} />
         {effects && <PostProcessing />}
       </Canvas>
     </div>

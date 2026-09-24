@@ -4,6 +4,7 @@ import { useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { AdditiveBlending, DoubleSide, Group, ShaderMaterial } from "three";
 import { frameAt, getWaypointU } from "@/lib/characterPath";
+import { HEX, glow } from "@/lib/palette";
 import { guide } from "../guideState";
 
 /**
@@ -85,7 +86,7 @@ const coneFragment = /* glsl */ `
 export function LightCone({
   height = 7,
   radius = 2.2,
-  color = [1, 0.85, 0.75] as [number, number, number],
+  color = [1, 0.8, 0.55] as [number, number, number],
   intensity = 0.35,
   position = [0, 0, 0] as [number, number, number],
 }: {
@@ -126,7 +127,7 @@ export function LightCone({
 export function FloorRing({
   radius,
   width = 0.05,
-  color = "#ff2a2a",
+  color = HEX.magenta,
   opacity = 0.9,
   y = 0.02,
 }: {
@@ -144,10 +145,22 @@ export function FloorRing({
   );
 }
 
-/** Emissive material helper colour constants (HDR values > 1 feed the bloom pass). */
+/**
+ * Emissive colours (HDR values > 1 feed the bloom pass). Sourced from the world
+ * palette in src/lib/palette.ts — edit colours there, not here.
+ */
 export const GLOW = {
-  red: [4, 0.25, 0.2] as [number, number, number],
-  ember: [2.4, 0.5, 0.3] as [number, number, number],
-  white: [2.2, 2.1, 2.0] as [number, number, number],
-  warm: [2.6, 1.7, 1.0] as [number, number, number],
+  primary: glow(HEX.magenta, 2.4),
+  secondary: glow(HEX.cyan, 2.2),
+  ember: glow(HEX.coral, 2.2),
+  white: glow(HEX.white, 1.6),
+  warm: glow(HEX.gold, 2.2),
+  lime: glow(HEX.lime, 2),
+  violet: glow(HEX.violet, 2.4),
 };
+
+/** Emissive accent by index, for multicoloured sequences (arches, rings, columns…). */
+export const GLOW_CYCLE = [GLOW.primary, GLOW.secondary, GLOW.warm, GLOW.lime, GLOW.ember, GLOW.violet] as const;
+export function glowAt(i: number): [number, number, number] {
+  return GLOW_CYCLE[((i % GLOW_CYCLE.length) + GLOW_CYCLE.length) % GLOW_CYCLE.length]!;
+}

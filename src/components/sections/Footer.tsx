@@ -5,7 +5,7 @@ import { NAV_ITEMS, PERSON } from "@/lib/sectionData";
 export function Footer({ linkPrefix = "" }: { linkPrefix?: string }) {
   const year = new Date().getFullYear();
   return (
-    <footer className="relative z-10 border-t border-white/10 bg-void/80 px-4 py-14 backdrop-blur sm:px-8 lg:px-16">
+    <footer className="relative z-10 border-t border-white/10 bg-void/95 px-4 py-14 sm:px-8 lg:px-16">
       <div className="mx-auto flex max-w-7xl flex-col gap-10 md:flex-row md:items-end md:justify-between">
         <div>
           <p className="font-display text-3xl font-black tracking-[0.12em] text-paper">{PERSON.name}</p>

@@ -1,5 +1,6 @@
 "use client";
 
+import { ACCENTS, HEX } from "@/lib/palette";
 import { useEffect, useMemo } from "react";
 import type { CanvasTexture } from "three";
 import { makeLabelTexture } from "@/lib/canvasLabel";
@@ -17,16 +18,22 @@ interface PanelSpec {
   key: string;
   lines: [string, string, string];
   education?: boolean;
+  accent: string;
 }
 
 function usePanelTextures(ready: boolean): { spec: PanelSpec; texture: CanvasTexture }[] {
   const panels = useMemo<PanelSpec[]>(
     () => [
-      ...AGENCIES.map((a, i) => ({ key: `a${i}`, lines: [a.agency, a.period, a.title] as [string, string, string] })),
+      ...AGENCIES.map((a, i) => ({
+        key: `a${i}`,
+        lines: [a.agency, a.period, a.title] as [string, string, string],
+        accent: ACCENTS[i % ACCENTS.length]!,
+      })),
       ...EDUCATION.map((e, i) => ({
         key: `e${i}`,
         lines: [e.school, e.period, e.programme] as [string, string, string],
         education: true,
+        accent: HEX.white,
       })),
     ],
     [],
@@ -39,12 +46,12 @@ function usePanelTextures(ready: boolean): { spec: PanelSpec; texture: CanvasTex
         width: 1024,
         height: 600,
         padding: 70,
-        accentBar: spec.education ? "#f2f2ef" : "#ff0004",
-        border: "rgba(255,255,255,0.08)",
+        accentBar: spec.accent,
+        border: "rgba(255,255,255,0.12)",
         lines: [
           { text: spec.lines[1], size: 40, family: "body", color: "#9a9a9a", letterSpacing: 4 },
           { text: spec.lines[0], size: 74, weight: 700, gap: 18, wrap: true },
-          { text: spec.lines[2], size: 48, family: "body", color: spec.education ? "#f2f2ef" : "#ff5a4f", gap: 22, wrap: true },
+          { text: spec.lines[2], size: 48, family: "body", color: spec.accent, gap: 22, wrap: true },
         ],
       }),
     }));
@@ -62,12 +69,12 @@ export function ServicesEnvironment() {
   const panels = usePanelTextures(ready);
 
   return (
-    <WaypointGroup waypoint={STOP_WAYPOINT.experience} mountRange={0.2} visibleRange={0.12}>
+    <WaypointGroup waypoint={STOP_WAYPOINT.experience} visibleRange={0.12}>
       {/* Walls */}
       {[-1, 1].map((side) => (
         <mesh key={side} position={[side * WALL_X, 2.3, -LENGTH / 2 + 8]} rotation-y={-side * (Math.PI / 2)}>
           <planeGeometry args={[LENGTH, 4.6]} />
-          <meshStandardMaterial color="#141417" roughness={0.9} />
+          <meshStandardMaterial color={HEX.wall} roughness={0.85} />
         </mesh>
       ))}
       {/* Ceiling light strips + floor runners */}
@@ -75,11 +82,11 @@ export function ServicesEnvironment() {
         <group key={x}>
           <mesh position={[x, 4.4, -LENGTH / 2 + 8]}>
             <boxGeometry args={[0.05, 0.03, LENGTH]} />
-            <meshBasicMaterial color={GLOW.white} toneMapped={false} />
+            <meshBasicMaterial color={GLOW.secondary} toneMapped={false} />
           </mesh>
           <mesh position={[x * 2.4, 0.02, -LENGTH / 2 + 8]}>
             <boxGeometry args={[0.03, 0.02, LENGTH]} />
-            <meshBasicMaterial color={GLOW.red} toneMapped={false} />
+            <meshBasicMaterial color={GLOW.primary} toneMapped={false} />
           </mesh>
         </group>
       ))}
@@ -91,7 +98,7 @@ export function ServicesEnvironment() {
           <group key={spec.key} position={[side * (WALL_X - 0.04), 2.05, z]} rotation-y={-side * (Math.PI / 2 - 0.18)}>
             <mesh position={[0, 0, -0.01]}>
               <planeGeometry args={[PANEL_W + 0.1, PANEL_H + 0.1]} />
-              <meshBasicMaterial color={spec.education ? "#d9d9d6" : "#ff0004"} />
+              <meshBasicMaterial color={spec.accent} />
             </mesh>
             <mesh>
               <planeGeometry args={[PANEL_W, PANEL_H]} />

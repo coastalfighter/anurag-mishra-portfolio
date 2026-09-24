@@ -22,7 +22,24 @@
  *   • Or set NEXT_PUBLIC_CHARACTER_MODE in .env.local to switch without code changes.
  */
 
+import spriteMeta from "../../public/assets/character/walk-sprite.json";
+
 export type CharacterMode = "sprite" | "video" | "gltf" | "placeholder";
+
+/** High-resolution sprite sheets (native source resolution, split across ≤4096px textures). */
+export interface HdSpriteConfig {
+  sheets: readonly string[];
+  frameWidth: number;
+  frameHeight: number;
+  cols: number;
+  /** Rows actually used in each sheet (last sheet is trimmed). */
+  sheetRows: readonly number[];
+  /** Frames per full sheet (cols × rows). */
+  framesPerSheet: number;
+  frameCount: number;
+  walkLoop: readonly [number, number];
+  arrivalGesture?: readonly [number, number];
+}
 
 export interface SpriteSheetConfig {
   /** Sprite sheet image (transparent WebP/PNG), frames laid out left→right, top→bottom. */
@@ -37,6 +54,13 @@ export interface SpriteSheetConfig {
   walkLoop: readonly [number, number];
   /** Optional gesture played when the guide arrives at the final stop (contact). */
   arrivalGesture?: readonly [number, number];
+  /** HD sheets used on desktop. Tablets and the mobile fallback use the low-res sheet above. */
+  hd?: HdSpriteConfig;
+  /**
+   * True when the source footage cuts the feet off at the frame edge. The bottom of the
+   * character is then faded into the ground mist; with a full-body source it is shown in full.
+   */
+  croppedFeet: boolean;
 }
 
 export interface VideoCharacterConfig {
@@ -90,24 +114,37 @@ export const CHARACTER: CharacterConfig = {
   height: 1.9,
   unitsPerFrame: 0.09,
 
-  // ⬇️ SWAP POINT: sprite sheet generated from assets-src/character-walk-source.mp4
-  //    (values mirror public/assets/character/walk-sprite.json).
+  // ⬇️ SWAP POINT: sprite sheets generated from assets-src/character-walk-source.mp4.
+  //    Values are read from public/assets/character/walk-sprite.json, which
+  //    `npm run assets:character` rewrites — no manual edits needed after a swap.
   sprite: {
-    url: "/assets/character/walk-sprite.webp",
-    cols: 12,
-    rows: 8,
-    frameCount: 96,
-    frameWidth: 200,
-    frameHeight: 360,
-    walkLoop: [0, 64],
-    arrivalGesture: [84, 95],
+    url: spriteMeta.image,
+    cols: spriteMeta.cols,
+    rows: spriteMeta.rows,
+    frameCount: spriteMeta.frameCount,
+    frameWidth: spriteMeta.frameWidth,
+    frameHeight: spriteMeta.frameHeight,
+    walkLoop: spriteMeta.walkLoop as [number, number],
+    arrivalGesture: spriteMeta.arrivalGesture as [number, number],
+    croppedFeet: spriteMeta.croppedFeet,
+    hd: {
+      sheets: spriteMeta.hd.sheets,
+      frameWidth: spriteMeta.hd.frameWidth,
+      frameHeight: spriteMeta.hd.frameHeight,
+      cols: spriteMeta.hd.cols,
+      sheetRows: spriteMeta.hd.sheetRows,
+      framesPerSheet: spriteMeta.hd.cols * spriteMeta.hd.rows,
+      frameCount: spriteMeta.hd.frameCount,
+      walkLoop: spriteMeta.hd.walkLoop as [number, number],
+      arrivalGesture: spriteMeta.hd.arrivalGesture as [number, number],
+    },
   },
 
   // ⬇️ SWAP POINT: transparent WebM version of the same walk.
   video: {
     url: "/assets/character/walk-alpha.webm",
-    aspect: 200 / 360,
-    loopSeconds: 64 / 12,
+    aspect: spriteMeta.frameWidth / spriteMeta.frameHeight,
+    loopSeconds: spriteMeta.walkLoop[1]! / spriteMeta.fps,
   },
 
   // ⬇️ SWAP POINT: rigged 3D model. Put your file at public/assets/models/character.glb
@@ -136,7 +173,11 @@ export function supportsAlphaWebm(): boolean {
 }
 
 /** Returns the frame index of the walk cycle for a given distance travelled. */
-export function walkFrameForDistance(distance: number, sprite: SpriteSheetConfig, unitsPerFrame: number): number {
+export function walkFrameForDistance(
+  distance: number,
+  sprite: { walkLoop: readonly [number, number] },
+  unitsPerFrame: number,
+): number {
   const [start, end] = sprite.walkLoop;
   const len = Math.max(1, end - start);
   const step = Math.floor(Math.abs(distance) / unitsPerFrame);

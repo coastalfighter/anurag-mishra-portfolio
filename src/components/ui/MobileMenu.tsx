@@ -67,7 +67,7 @@ export function MobileMenu({ open, onClose, onNavigate, hrefFor, active }: Props
           role="dialog"
           aria-modal="true"
           aria-label="Site menu"
-          className="fixed inset-0 z-40 flex flex-col justify-between bg-void/95 px-6 pb-10 pt-28 backdrop-blur-xl md:hidden"
+          className="fixed inset-0 z-40 flex flex-col justify-between bg-void/[0.98] px-6 pb-10 pt-28 md:hidden"
           initial={{ clipPath: "inset(0 0 100% 0)" }}
           animate={{ clipPath: "inset(0 0 0% 0)" }}
           exit={{ clipPath: "inset(0 0 100% 0)" }}

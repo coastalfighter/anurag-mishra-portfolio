@@ -73,7 +73,7 @@ export function ExperienceShell({ children, footer }: { children: ReactNode; foo
         {tier === "fallback" && (
           <div
             aria-hidden="true"
-            className="pointer-events-none fixed inset-0 z-0 bg-[radial-gradient(ellipse_at_50%_120%,rgba(255,0,4,0.18),transparent_60%),radial-gradient(ellipse_at_50%_-20%,rgba(255,255,255,0.05),transparent_50%)]"
+            className="pointer-events-none fixed inset-0 z-0 bg-[linear-gradient(180deg,#1b1f8f_0%,#6a2cf5_38%,#e0409a_72%,#ff9a4d_100%)] opacity-60"
           />
         )}
         <IntroController tier={device}>

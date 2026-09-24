@@ -1,5 +1,6 @@
 "use client";
 
+import { ACCENTS, HEX } from "@/lib/palette";
 import { useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import { Group } from "three";
@@ -24,12 +25,12 @@ export function TestimonialsEnvironment() {
 
   const awardTextures = useMemo(() => {
     if (!ready) return [];
-    return AWARDS.map((a) =>
+    return AWARDS.map((a, i) =>
       makeLabelTexture({
         width: 768,
         height: 480,
         padding: 56,
-        accentBar: "#ff0004",
+        accentBar: ACCENTS[i % ACCENTS.length],
         lines: [
           { text: a.show, size: 56, weight: 700, wrap: true },
           { text: a.entries[0] ?? "", size: 36, family: "body", color: "#bdbdbd", gap: 20, wrap: true },
@@ -45,7 +46,7 @@ export function TestimonialsEnvironment() {
         width: 768,
         height: 200,
         padding: 40,
-        background: "rgba(10,10,12,0.9)",
+        background: "rgba(36,20,78,0.94)",
         align: "center",
         lines: [{ text: p, size: 58, weight: 700, color: "#f2f2ef", gap: 30, letterSpacing: 6 }],
       }),
@@ -71,21 +72,20 @@ export function TestimonialsEnvironment() {
   const pressRadius = 3.0;
 
   return (
-    <WaypointGroup waypoint={STOP_WAYPOINT.awards} mountRange={0.2} visibleRange={0.12}>
+    <WaypointGroup waypoint={STOP_WAYPOINT.awards} visibleRange={0.12}>
       {/* Dais */}
       <mesh position={[0, 0.08, 0]}>
         <cylinderGeometry args={[2.3, 2.5, 0.16, 96]} />
-        <meshStandardMaterial color="#141417" roughness={0.3} metalness={0.7} />
+        <meshStandardMaterial color={HEX.stoneLight} roughness={0.35} metalness={0.3} />
       </mesh>
       <FloorRing radius={2.32} width={0.04} y={0.165} />
-      <FloorRing radius={4.4} width={0.02} y={0.02} opacity={0.4} color="#ffffff" />
-      <LightCone height={9} radius={2.4} intensity={0.22} color={[1, 0.4, 0.3]} />
-      <spotLight position={[0, 9, 1]} angle={0.4} penumbra={0.9} intensity={40} distance={16} color="#ffd0c0" />
+      <FloorRing radius={4.4} width={0.02} y={0.02} opacity={0.6} color={HEX.cyan} />
+      <LightCone height={9} radius={2.4} intensity={0.26} color={[1, 0.55, 0.85]} />
 
       {/* Halo */}
       <mesh position={[0, 4.35, 0]} rotation-x={Math.PI / 2}>
         <torusGeometry args={[crownRadius + 0.2, 0.02, 8, 160]} />
-        <meshBasicMaterial color={GLOW.red} toneMapped={false} />
+        <meshBasicMaterial color={GLOW.warm} toneMapped={false} />
       </mesh>
 
       {/* Award crown */}

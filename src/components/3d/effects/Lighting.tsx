@@ -26,10 +26,11 @@ export function Lighting() {
 
   return (
     <>
-      <ambientLight intensity={0.25} />
-      <hemisphereLight args={["#5b6278", "#140c0c", 0.45]} />
-      <directionalLight position={[-12, 18, -30]} intensity={0.65} color="#ffb4a0" />
-      <spotLight ref={follow} angle={0.42} penumbra={0.9} intensity={45} distance={14} decay={1.5} color="#fff1e6" />
+      <ambientLight intensity={0.45} />
+      <hemisphereLight args={["#a9b8ff", "#ff6fb5", 1.1]} />
+      {/* Low sun behind the guide (+Z), matching the sky dome. */}
+      <directionalLight position={[8, 10, 40]} intensity={1.8} color="#ffc38a" />
+      <spotLight ref={follow} angle={0.42} penumbra={0.9} intensity={30} distance={14} decay={1.5} color="#fff1e6" />
       <object3D ref={followTarget} />
     </>
   );

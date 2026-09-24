@@ -11,7 +11,9 @@ const vertex = /* glsl */ `
   attribute float aSeed;
   attribute float aSize;
   varying float vAlpha;
+  varying float vSeed;
   void main() {
+    vSeed = aSeed;
     vec3 p = position;
     // Slow upward drift with a lazy sideways sway; wraps every 8 m.
     p.y = mod(p.y + uTime * (0.08 + aSeed * 0.12), 8.0);
@@ -28,10 +30,11 @@ const vertex = /* glsl */ `
 
 const fragment = /* glsl */ `
   varying float vAlpha;
+  varying float vSeed;
   void main() {
     float d = length(gl_PointCoord - 0.5);
     float a = smoothstep(0.5, 0.0, d) * vAlpha;
-    gl_FragColor = vec4(vec3(1.0, 0.72, 0.6) * a, a);
+    gl_FragColor = vec4(mix(vec3(1.0, 0.85, 0.45), vec3(1.0, 0.45, 0.9), vSeed) * a, a);
   }
 `;
 

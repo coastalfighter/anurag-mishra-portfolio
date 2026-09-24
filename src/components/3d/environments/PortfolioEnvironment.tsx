@@ -1,5 +1,6 @@
 "use client";
 
+import { HEX } from "@/lib/palette";
 import { useFrame } from "@react-three/fiber";
 import { Suspense, useEffect, useRef } from "react";
 import { Group, MeshBasicMaterial, type Texture } from "three";
@@ -7,7 +8,7 @@ import { STOP_WAYPOINT } from "@/lib/characterPath";
 import { CASE_STUDIES, SECTIONS, type CaseStudy } from "@/lib/sectionData";
 import { useWorldTexture } from "@/lib/textures";
 import { journey } from "@/store/journeyStore";
-import { FloorRing, GLOW, WaypointGroup } from "./shared";
+import { FloorRing, WaypointGroup, glowAt } from "./shared";
 
 const INDEX = SECTIONS.findIndex((s) => s.id === "work");
 const SCREEN_W = 2.6;
@@ -45,7 +46,7 @@ function ScreenImage({ study }: { study: CaseStudy }) {
   );
 }
 
-function Screen({ study, angle }: { study: CaseStudy; angle: number }) {
+function Screen({ study, angle, accent }: { study: CaseStudy; angle: number; accent: [number, number, number] }) {
   const x = Math.sin(angle) * RADIUS;
   const z = Math.cos(angle) * RADIUS;
   return (
@@ -54,11 +55,11 @@ function Screen({ study, angle }: { study: CaseStudy; angle: number }) {
       <group rotation-x={-0.55}>
         <mesh>
           <planeGeometry args={[SCREEN_W + 0.12, SCREEN_H + 0.12]} />
-          <meshBasicMaterial color="#0a0a0c" />
+          <meshBasicMaterial color={HEX.wall} />
         </mesh>
         <mesh position={[0, -SCREEN_H / 2 - 0.07, 0.001]}>
           <planeGeometry args={[SCREEN_W + 0.12, 0.018]} />
-          <meshBasicMaterial color={GLOW.red} toneMapped={false} />
+          <meshBasicMaterial color={accent} toneMapped={false} />
         </mesh>
         <Suspense fallback={null}>
           <ScreenImage study={study} />
@@ -67,7 +68,7 @@ function Screen({ study, angle }: { study: CaseStudy; angle: number }) {
       {/* Stand */}
       <mesh position={[0, -1, -0.35]}>
         <boxGeometry args={[0.05, 1.9, 0.05]} />
-        <meshStandardMaterial color="#1a1a1e" metalness={0.6} roughness={0.4} />
+        <meshStandardMaterial color={HEX.stoneLight} metalness={0.3} roughness={0.4} />
       </mesh>
     </group>
   );
@@ -92,20 +93,19 @@ export function PortfolioEnvironment() {
   const step = (Math.PI * 2) / CASE_STUDIES.length;
 
   return (
-    <WaypointGroup waypoint={STOP_WAYPOINT.work} mountRange={0.22} visibleRange={0.14}>
+    <WaypointGroup waypoint={STOP_WAYPOINT.work} visibleRange={0.14}>
       <mesh rotation-x={-Math.PI / 2} position={[0, 0.01, 0]}>
         <circleGeometry args={[8.5, 96]} />
-        <meshStandardMaterial color="#0f0f12" roughness={0.3} metalness={0.7} />
+        <meshStandardMaterial color={HEX.stone} roughness={0.35} metalness={0.4} />
       </mesh>
       <FloorRing radius={8.5} width={0.05} y={0.02} />
-      <FloorRing radius={5} width={0.015} y={0.02} opacity={0.35} color="#ffffff" />
+      <FloorRing radius={5} width={0.015} y={0.02} opacity={0.6} color={HEX.cyan} />
       <FloorRing radius={1.4} width={0.03} y={0.02} opacity={0.8} />
       <group ref={ring}>
         {CASE_STUDIES.map((study, i) => (
-          <Screen key={study.slug} study={study} angle={i * step} />
+          <Screen key={study.slug} study={study} angle={i * step} accent={glowAt(i)} />
         ))}
       </group>
-      <pointLight position={[0, 5, 0]} intensity={20} distance={14} color="#ffd9c9" />
     </WaypointGroup>
   );
 }

@@ -1,23 +1,26 @@
 "use client";
 
 import { Detailed, useAnimations, useGLTF } from "@react-three/drei";
-import { useFrame, useThree } from "@react-three/fiber";
+import { useFrame, useLoader, useThree } from "@react-three/fiber";
 import { Component, Suspense, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
   AdditiveBlending,
   DoubleSide,
   Group,
   LinearFilter,
+  LinearMipmapLinearFilter,
   MathUtils,
   Mesh,
   ShaderMaterial,
   SRGBColorSpace,
+  TextureLoader,
   VideoTexture,
   type AnimationAction,
   type Texture,
 } from "three";
 import { CHARACTER, supportsAlphaWebm, walkFrameForDistance, type CharacterMode } from "@/lib/characterConfig";
 import { DECODER_PATHS, getKtx2Loader, useWorldTexture } from "@/lib/textures";
+import { HEX, WORLD, lin } from "@/lib/palette";
 import { guide } from "./guideState";
 
 /* ───────────────────────── Billboard shader (sprite + video modes) ───────────────────────── */
@@ -39,18 +42,20 @@ const billboardFragment = /* glsl */ `
   uniform float uRim;
   uniform float uFog;
   uniform vec3 uFogColor;
+  uniform vec3 uRimColor;
+  uniform float uFootFade;
   varying vec2 vUv;
 
   void main() {
     vec2 uv = vUv * uRepeat + uOffset;
     vec4 tex = texture2D(uMap, uv);
-    // Feet are cropped in the source footage: fade the bottom into the ground mist.
-    float foot = smoothstep(0.0, 0.11, vUv.y);
+    // If the source footage crops the feet, fade the cut edge into the ground mist.
+    float foot = uFootFade > 0.0 ? smoothstep(0.0, uFootFade, vUv.y) : 1.0;
     float alpha = tex.a * foot * uOpacity;
     if (alpha < 0.02) discard;
-    // Cool rim toward the silhouette edge for separation from the dark world.
+    // Soft coloured rim toward the silhouette edge for separation from the world.
     float edge = 1.0 - smoothstep(0.35, 0.95, tex.a);
-    vec3 color = tex.rgb * uTint + vec3(1.0, 0.25, 0.2) * edge * uRim;
+    vec3 color = tex.rgb * uTint + uRimColor * edge * uRim;
     // Distance fog (the guide emerges from the haze during the hero walk-in).
     color = mix(color, uFogColor, uFog);
     gl_FragColor = vec4(color, alpha * (1.0 - uFog * 0.35));
@@ -70,7 +75,9 @@ function useBillboardMaterial(map: Texture | null): ShaderMaterial {
           uOpacity: { value: 1 },
           uRim: { value: 0.35 },
           uFog: { value: 0 },
-          uFogColor: { value: [0.043, 0.043, 0.051] },
+          uFogColor: { value: WORLD.fogLinear },
+          uRimColor: { value: WORLD.rimLinear },
+          uFootFade: { value: CHARACTER.sprite.croppedFeet ? 0.1 : 0 },
         },
         vertexShader: billboardVertex,
         fragmentShader: billboardFragment,
@@ -101,13 +108,30 @@ function useBillboard(ref: React.RefObject<Mesh | null>, material: ShaderMateria
     const dz = camera.position.z - p.z;
     mesh.rotation.y = Math.atan2(dx, dz);
     const dist = Math.hypot(dx, dz);
-    material.uniforms.uFog!.value = MathUtils.smoothstep(dist, 14, 34) * 0.92;
+    material.uniforms.uFog!.value = MathUtils.smoothstep(dist, 18, 40) * 0.85;
   });
 }
 
 /* ───────────────────────── Sprite-sheet guide (default) ───────────────────────── */
 
-function SpriteCharacter() {
+/**
+ * Plane placement: with cropped-feet footage the plane is sunk slightly so the faded
+ * edge sits in the ground mist; with full-body footage the soles touch the ground.
+ */
+function planeY(h: number): number {
+  return CHARACTER.sprite.croppedFeet ? h / 2 - h * 0.06 : h / 2;
+}
+
+/** Walk-cycle / gesture frame for the current guide state, for a given loop definition. */
+function currentFrame(walkLoop: readonly [number, number], gesture?: readonly [number, number]): number {
+  if (gesture && guide.arrival > 0.01 && guide.walkAmount < 0.3) {
+    return Math.round(MathUtils.lerp(gesture[0], gesture[1], guide.arrival));
+  }
+  return walkFrameForDistance(guide.distance, { walkLoop }, CHARACTER.unitsPerFrame);
+}
+
+/** Low-resolution sheet (tablets / lite tier): one texture, all frames. */
+function SpriteCharacterLow() {
   const cfg = CHARACTER.sprite;
   const texture = useWorldTexture(cfg.url, { mipmaps: false });
   const material = useBillboardMaterial(texture);
@@ -123,22 +147,69 @@ function SpriteCharacter() {
   }, [texture, material, cfg.cols, cfg.rows]);
 
   useFrame(() => {
-    let frame = walkFrameForDistance(guide.distance, cfg, CHARACTER.unitsPerFrame);
-    // Arrival gesture at the final stop, scrubbed by scroll.
-    if (cfg.arrivalGesture && guide.arrival > 0.01 && guide.walkAmount < 0.3) {
-      const [a, b] = cfg.arrivalGesture;
-      frame = Math.round(MathUtils.lerp(a, b, guide.arrival));
-    }
+    const frame = currentFrame(cfg.walkLoop, cfg.arrivalGesture);
     const col = frame % cfg.cols;
     const row = Math.floor(frame / cfg.cols);
     material.uniforms.uOffset!.value = [col / cfg.cols, 1 - (row + 1) / cfg.rows];
   });
 
   return (
-    <mesh ref={mesh} position={[0, h / 2 - h * 0.06, 0]} material={material} renderOrder={2}>
+    <mesh ref={mesh} position={[0, planeY(h), 0]} material={material} renderOrder={2}>
       <planeGeometry args={[h * aspect, h]} />
     </mesh>
   );
+}
+
+/** Native-resolution sheets (desktop): frames spread over several ≤4096px textures. */
+function SpriteCharacterHd() {
+  const hd = CHARACTER.sprite.hd!;
+  const gl = useThree((s) => s.gl);
+  const textures = useLoader(TextureLoader, hd.sheets as string[]);
+  const material = useBillboardMaterial(textures[0] ?? null);
+  const mesh = useRef<Mesh>(null);
+  const aspect = hd.frameWidth / hd.frameHeight;
+  const h = CHARACTER.height;
+  const current = useRef(-1);
+  useBillboard(mesh, material);
+
+  useEffect(() => {
+    const aniso = Math.min(8, gl.capabilities.getMaxAnisotropy());
+    textures.forEach((t) => {
+      t.colorSpace = SRGBColorSpace;
+      t.generateMipmaps = true;
+      t.minFilter = LinearMipmapLinearFilter;
+      t.magFilter = LinearFilter;
+      t.anisotropy = aniso;
+      t.needsUpdate = true;
+      // Upload every sheet now, so switching sheets mid-walk never stalls a frame.
+      gl.initTexture(t);
+    });
+  }, [textures, gl]);
+
+  useFrame(() => {
+    const frame = currentFrame(hd.walkLoop, hd.arrivalGesture);
+    const sheet = Math.min(Math.floor(frame / hd.framesPerSheet), textures.length - 1);
+    const local = frame - sheet * hd.framesPerSheet;
+    const rows = hd.sheetRows[sheet] ?? 1;
+    const col = local % hd.cols;
+    const row = Math.floor(local / hd.cols);
+    if (sheet !== current.current) {
+      current.current = sheet;
+      material.uniforms.uMap!.value = textures[sheet];
+      material.uniforms.uRepeat!.value = [1 / hd.cols, 1 / rows];
+    }
+    material.uniforms.uOffset!.value = [col / hd.cols, 1 - (row + 1) / rows];
+  });
+
+  return (
+    <mesh ref={mesh} position={[0, planeY(h), 0]} material={material} renderOrder={2}>
+      <planeGeometry args={[h * aspect, h]} />
+    </mesh>
+  );
+}
+
+function SpriteCharacter({ hd }: { hd: boolean }) {
+  return hd && CHARACTER.sprite.hd ? <SpriteCharacterHd /> : <SpriteCharacterLow />;
 }
 
 /* ───────────────────────── Transparent WebM guide ───────────────────────── */
@@ -188,7 +259,7 @@ function VideoCharacter() {
   });
 
   return (
-    <mesh ref={mesh} position={[0, h / 2 - h * 0.06, 0]} material={material} renderOrder={2}>
+    <mesh ref={mesh} position={[0, planeY(h), 0]} material={material} renderOrder={2}>
       <planeGeometry args={[h * cfg.aspect, h]} />
     </mesh>
   );
@@ -340,7 +411,7 @@ function GroundContact() {
   const material = useMemo(
     () =>
       new ShaderMaterial({
-        uniforms: { uColor: { value: [1.0, 0.18, 0.12] }, uStrength: { value: 0.55 } },
+        uniforms: { uColor: { value: lin(HEX.gold) }, uStrength: { value: 0.55 } },
         vertexShader: billboardVertex,
         fragmentShader: glowFragment,
         transparent: true,
@@ -358,7 +429,7 @@ function GroundContact() {
       {/* Soft contact shadow */}
       <mesh rotation-x={-Math.PI / 2} position={[0, 0.012, 0]}>
         <circleGeometry args={[0.7, 48]} />
-        <meshBasicMaterial color="#000" transparent opacity={0.55} depthWrite={false} />
+        <meshBasicMaterial color="#12052a" transparent opacity={0.5} depthWrite={false} />
       </mesh>
       {/* Warm pool of light the guide walks in */}
       <mesh rotation-x={-Math.PI / 2} position={[0, 0.02, 0]} material={material}>
@@ -396,7 +467,7 @@ function resolveMode(requested: CharacterMode): CharacterMode {
  * ▶ SWAP POINT: the renderer is chosen by CHARACTER.mode in src/lib/characterConfig.ts
  *   (sprite · video · gltf · placeholder). Any load failure falls back to the mannequin.
  */
-export function Character() {
+export function Character({ hd = false }: { hd?: boolean }) {
   const [mode] = useState(() => resolveMode(CHARACTER.mode));
   const fallback = <PlaceholderCharacter />;
   let body: ReactNode;
@@ -411,7 +482,7 @@ export function Character() {
       body = fallback;
       break;
     default:
-      body = <SpriteCharacter />;
+      body = <SpriteCharacter hd={hd} />;
   }
   return (
     <group>

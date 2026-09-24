@@ -55,3 +55,23 @@ describe("walk cycle", () => {
     }
   });
 });
+
+describe("HD sprite sheets", () => {
+  it("exist on disk and cover the walk loop + arrival gesture", async () => {
+    const { existsSync } = await import("node:fs");
+    const { join } = await import("node:path");
+    const hd = CHARACTER.sprite.hd!;
+    hd.sheets.forEach((url) => expect(existsSync(join(process.cwd(), "public", url)), url).toBe(true));
+    expect(hd.sheetRows).toHaveLength(hd.sheets.length);
+    const capacity = hd.sheetRows.reduce((n, rows, i) => n + (i < hd.sheets.length - 1 ? hd.framesPerSheet : rows * hd.cols), 0);
+    expect(capacity).toBeGreaterThanOrEqual(hd.frameCount);
+    expect(hd.walkLoop[1]).toBeLessThanOrEqual(hd.frameCount);
+    expect(hd.arrivalGesture![1]).toBeLessThan(hd.frameCount);
+  });
+
+  it("keeps each sheet within the 4096px WebGL texture limit", () => {
+    const hd = CHARACTER.sprite.hd!;
+    expect(hd.cols * hd.frameWidth).toBeLessThanOrEqual(4096);
+    hd.sheetRows.forEach((rows) => expect(rows * hd.frameHeight).toBeLessThanOrEqual(4096));
+  });
+});

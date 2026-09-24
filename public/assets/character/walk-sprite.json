@@ -10,5 +10,32 @@
     0,
     64
   ],
-  "idleFrame": 95
+  "arrivalGesture": [
+    84,
+    95
+  ],
+  "croppedFeet": true,
+  "hd": {
+    "sheets": [
+      "/assets/character/walk-hd-0.webp",
+      "/assets/character/walk-hd-1.webp"
+    ],
+    "frameWidth": 400,
+    "frameHeight": 720,
+    "cols": 10,
+    "rows": 5,
+    "frameCount": 76,
+    "walkLoop": [
+      0,
+      64
+    ],
+    "arrivalGesture": [
+      64,
+      75
+    ],
+    "sheetRows": [
+      5,
+      3
+    ]
+  }
 }

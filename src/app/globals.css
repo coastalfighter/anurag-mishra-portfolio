@@ -6,10 +6,10 @@
  * (charcoal #272727 / #1d1d1d, white type, signal red #ff0004, Chivo + Abel).
  */
 @theme {
-  --color-void: #0b0b0d;
-  --color-ink: #121214;
-  --color-charcoal: #1d1d1d;
-  --color-graphite: #272727;
+  --color-void: #120a2e;
+  --color-ink: #1a1040;
+  --color-charcoal: #22164a;
+  --color-graphite: #2c1f5c;
   --color-line: rgb(255 255 255 / 0.1);
   --color-paper: #f2f2ef;
   --color-mute: #9a9a9a;
@@ -74,15 +74,17 @@
 }
 
 @layer components {
-  /* Frosted panel that keeps copy legible over the 3D world. */
+  /*
+   * Tinted panel that keeps copy legible over the 3D world.
+   * Deliberately NO backdrop-filter: blurring the live WebGL canvas behind ~20
+   * panels every frame was the main cause of scroll jank.
+   */
   .glass {
-    background: linear-gradient(160deg, rgb(24 24 27 / 0.72), rgb(12 12 14 / 0.58));
-    border: 1px solid var(--color-line);
-    backdrop-filter: blur(14px) saturate(120%);
-    -webkit-backdrop-filter: blur(14px) saturate(120%);
+    background: linear-gradient(160deg, rgb(30 17 66 / 0.9), rgb(16 9 40 / 0.84));
+    border: 1px solid rgb(255 255 255 / 0.12);
     box-shadow:
-      0 30px 80px -30px rgb(0 0 0 / 0.8),
-      inset 0 1px 0 rgb(255 255 255 / 0.05);
+      0 24px 60px -30px rgb(8 2 30 / 0.9),
+      inset 0 1px 0 rgb(255 255 255 / 0.07);
   }
 
   .eyebrow {
@@ -142,8 +144,6 @@
 html.motion-ok [data-reveal] {
   opacity: 0;
   transform: translateY(36px) scale(0.985);
-  filter: blur(6px);
-  will-change: transform, opacity, filter;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -159,7 +159,6 @@ html.motion-ok [data-reveal] {
   html.motion-ok [data-reveal] {
     opacity: 1;
     transform: none;
-    filter: none;
   }
 }
 

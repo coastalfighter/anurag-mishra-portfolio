@@ -41,8 +41,8 @@ const trailFragment = /* glsl */ `
     // Walked part: solid ember line. Ahead: travelling dashes that invite the next step.
     float dash = step(0.55, fract(metres / 1.6 - uTime * 0.35));
     float nearAhead = exp(-max(metres - guideM, 0.0) / 22.0);
-    vec3 walked = vec3(1.0, 0.1, 0.08) * (core * 1.4 + halo);
-    vec3 next = vec3(1.0, 0.92, 0.86) * core * dash * nearAhead * 0.9 + vec3(1.0, 0.2, 0.15) * halo * nearAhead;
+    vec3 walked = vec3(1.0, 0.62, 0.12) * (core * 1.5 + halo);
+    vec3 next = vec3(0.1, 0.85, 1.0) * core * dash * nearAhead * 1.1 + vec3(1.0, 0.2, 0.7) * halo * nearAhead;
     vec3 color = mix(walked, next, ahead);
     float fog = 1.0 - smoothstep(18.0, 60.0, vDist);
     gl_FragColor = vec4(color * fog, 1.0);
@@ -106,7 +106,7 @@ function Trail() {
  * Converts the scroll-driven journey state into the guide's smoothed position,
  * speed and stride, then places <Character/> on the path.
  */
-export function CharacterPath() {
+export function CharacterPath({ hd = false }: { hd?: boolean }) {
   const group = useRef<Group>(null);
 
   // QA hook: append ?debug to the URL to inspect live state from the console.
@@ -151,7 +151,7 @@ export function CharacterPath() {
     <>
       <Trail />
       <group ref={group}>
-        <Character />
+        <Character hd={hd} />
       </group>
     </>
   );

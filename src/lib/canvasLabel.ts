@@ -56,7 +56,7 @@ function wrapText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number)
  * (career corridor, award crown) so no font files need to be fetched by WebGL.
  */
 export function makeLabelTexture(opts: LabelOptions): CanvasTexture {
-  const { width, height, lines, padding = 48, background = "rgba(16,16,18,0.92)", border, accentBar, align = "left" } = opts;
+  const { width, height, lines, padding = 48, background = "rgba(36,20,78,0.94)", border, accentBar, align = "left" } = opts;
   const canvas = document.createElement("canvas");
   canvas.width = width;
   canvas.height = height;

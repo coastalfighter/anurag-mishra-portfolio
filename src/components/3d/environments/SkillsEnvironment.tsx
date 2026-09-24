@@ -5,14 +5,15 @@ import { useFrame } from "@react-three/fiber";
 import { useRef, type ReactElement } from "react";
 import { Color, Group, MeshStandardMaterial } from "three";
 import { STOP_WAYPOINT } from "@/lib/characterPath";
+import { ACCENTS, HEX, glow } from "@/lib/palette";
 import { HIGHLIGHTS, SECTIONS, type HighlightIcon } from "@/lib/sectionData";
 import { journey } from "@/store/journeyStore";
 import { FloorRing, WaypointGroup } from "./shared";
 
 const INDEX = SECTIONS.findIndex((s) => s.id === "highlights");
-const OFF = new Color("#1b1b1f");
-const ON = new Color(1.6, 0.12, 0.08);
-const ON_WHITE = new Color(0.9, 0.86, 0.82);
+const OFF = new Color(HEX.stone);
+/** Each glyph ignites in its own accent colour (HDR → bloom). */
+const ON = ACCENTS.map((hex) => new Color(...glow(hex, 0.9)));
 
 /** Glyph geometry per highlight at a given level of detail (0 = highest). */
 function glyph(kind: HighlightIcon, lod: 0 | 1 | 2): ReactElement {
@@ -46,7 +47,7 @@ function Pillar({ index, icon }: { index: number; icon: HighlightIcon }) {
     const threshold = 0.28 + index * 0.075;
     const target = p > threshold ? 1 : 0;
     lit.current += (target - lit.current) * Math.min(1, dt * 4);
-    colour.current.copy(OFF).lerp(index % 2 ? ON_WHITE : ON, lit.current);
+    colour.current.copy(OFF).lerp(ON[index % ON.length]!, lit.current);
     mats.current.forEach((m) => m.emissive.copy(colour.current));
     if (spin.current) {
       spin.current.rotation.y += dt * (0.3 + lit.current * 0.9);
@@ -60,9 +61,10 @@ function Pillar({ index, icon }: { index: number; icon: HighlightIcon }) {
       ref={(m) => {
         if (m) mats.current[lod] = m;
       }}
-      color="#26262b"
-      roughness={0.25}
-      metalness={0.7}
+      color={HEX.stoneLight}
+      roughness={0.3}
+      metalness={0.4}
+      flatShading
       emissive={OFF}
       toneMapped={false}
     />
@@ -72,11 +74,11 @@ function Pillar({ index, icon }: { index: number; icon: HighlightIcon }) {
     <group>
       <mesh position={[0, 0.55, 0]}>
         <boxGeometry args={[0.55, 1.1, 0.55]} />
-        <meshStandardMaterial color="#121215" roughness={0.6} metalness={0.4} />
+        <meshStandardMaterial color={HEX.stoneLight} roughness={0.5} metalness={0.2} />
       </mesh>
       <mesh position={[0, 1.105, 0]}>
         <boxGeometry args={[0.56, 0.01, 0.56]} />
-        <meshBasicMaterial color={[2.5, 0.2, 0.15]} toneMapped={false} />
+        <meshBasicMaterial color={glow(ACCENTS[index % ACCENTS.length]!, 2)} toneMapped={false} />
       </mesh>
       <group ref={spin} position={[0, 1.55, 0]}>
         {/* LOD: detailed glyph up close, simplified further away. */}
@@ -106,7 +108,7 @@ export function SkillsEnvironment() {
           </group>
         );
       })}
-      <FloorRing radius={1.3} width={0.025} opacity={0.7} />
+      <FloorRing radius={1.3} width={0.03} opacity={0.8} color={HEX.gold} />
     </WaypointGroup>
   );
 }
